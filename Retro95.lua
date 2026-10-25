@@ -406,6 +406,42 @@ local function paintCheck(c, x, y, color, v)
     for i = 1, 7 do rect(c[i], x + i - 1, y + CHECK[i], 1, 3, color, v) end
 end
 
+-- Line icons for the "Icons" sidebar: segments in [-1, 1], at most ICON_SEGS each
+local ICON_SEGS = 8
+local ICON_SET = {
+    home = { {-0.9,0,0,-0.9}, {0,-0.9,0.9,0}, {-0.6,-0.25,-0.6,0.85}, {0.6,-0.25,0.6,0.85}, {-0.6,0.85,0.6,0.85}, {-0.15,0.85,-0.15,0.3}, {0.15,0.3,0.15,0.85}, {-0.15,0.3,0.15,0.3} },
+    settings = { {-0.85,-0.5,0.85,-0.5}, {-0.85,0.5,0.85,0.5}, {0.3,-0.8,0.3,-0.2}, {-0.3,0.2,-0.3,0.8} },
+    eye = { {-0.9,0,-0.4,-0.5}, {-0.4,-0.5,0.4,-0.5}, {0.4,-0.5,0.9,0}, {0.9,0,0.4,0.5}, {0.4,0.5,-0.4,0.5}, {-0.4,0.5,-0.9,0}, {-0.15,-0.15,0.15,0.15}, {0.15,-0.15,-0.15,0.15} },
+    star = { {0,-0.9,0.53,0.73}, {0.53,0.73,-0.85,-0.28}, {-0.85,-0.28,0.85,-0.28}, {0.85,-0.28,-0.53,0.73}, {-0.53,0.73,0,-0.9} },
+    user = { {-0.3,-0.85,0.3,-0.85}, {0.3,-0.85,0.3,-0.25}, {0.3,-0.25,-0.3,-0.25}, {-0.3,-0.25,-0.3,-0.85}, {-0.8,0.85,-0.5,0.15}, {-0.5,0.15,0.5,0.15}, {0.5,0.15,0.8,0.85}, {-0.8,0.85,0.8,0.85} },
+    target = { {-0.7,-0.7,0.7,-0.7}, {0.7,-0.7,0.7,0.7}, {0.7,0.7,-0.7,0.7}, {-0.7,0.7,-0.7,-0.7}, {0,-1,0,-0.3}, {0,0.3,0,1}, {-1,0,-0.3,0}, {0.3,0,1,0} },
+    list = { {-0.9,-0.6,-0.6,-0.6}, {-0.3,-0.6,0.9,-0.6}, {-0.9,0,-0.6,0}, {-0.3,0,0.9,0}, {-0.9,0.6,-0.6,0.6}, {-0.3,0.6,0.9,0.6} },
+    zap = { {0.25,-0.85,-0.6,0.1}, {-0.6,0.1,0.05,0.1}, {0.05,0.1,-0.2,0.85}, {-0.2,0.85,0.65,-0.2}, {0.65,-0.2,0.15,-0.2}, {0.15,-0.2,0.25,-0.85} },
+    folder = { {-0.9,-0.6,-0.3,-0.6}, {-0.3,-0.6,-0.1,-0.35}, {-0.1,-0.35,0.9,-0.35}, {0.9,-0.35,0.9,0.75}, {0.9,0.75,-0.9,0.75}, {-0.9,0.75,-0.9,-0.6} },
+    palette = { {0,-0.85,0.65,0.25}, {0.65,0.25,0.35,0.75}, {0.35,0.75,-0.35,0.75}, {-0.35,0.75,-0.65,0.25}, {-0.65,0.25,0,-0.85} },
+    shield = { {-0.7,-0.75,0.7,-0.75}, {0.7,-0.75,0.7,0.1}, {0.7,0.1,0,0.9}, {0,0.9,-0.7,0.1}, {-0.7,0.1,-0.7,-0.75} },
+    box = { {-0.8,-0.8,0.8,-0.8}, {0.8,-0.8,0.8,0.8}, {0.8,0.8,-0.8,0.8}, {-0.8,0.8,-0.8,-0.8}, {-0.8,-0.2,0.8,-0.2} },
+    cart = { {-0.9,-0.7,-0.6,-0.7}, {-0.6,-0.7,-0.35,0.4}, {-0.35,0.4,0.7,0.4}, {0.7,0.4,0.9,-0.4}, {0.9,-0.4,-0.5,-0.4}, {-0.3,0.75,-0.15,0.75}, {0.45,0.75,0.6,0.75} },
+    code = { {-0.3,-0.6,-0.9,0}, {-0.9,0,-0.3,0.6}, {0.3,-0.6,0.9,0}, {0.9,0,0.3,0.6} },
+}
+ICON_SET.gear, ICON_SET.sliders, ICON_SET.visuals, ICON_SET.esp = ICON_SET.settings, ICON_SET.settings, ICON_SET.eye, ICON_SET.eye
+ICON_SET.shop, ICON_SET.theme, ICON_SET.themes, ICON_SET.farm = ICON_SET.cart, ICON_SET.palette, ICON_SET.palette, ICON_SET.zap
+local ICON_CYCLE = { "home", "settings", "eye", "star", "list", "target", "user", "box" }
+local function paintIcon(lines, segs, cx, cy, size, color, v)
+    local r = size / 2
+    for i = 1, ICON_SEGS do
+        local l, s = lines[i], segs and segs[i]
+        if v and s then
+            l.From = V(floor(cx + s[1] * r) + 0.5, floor(cy + s[2] * r) + 0.5)
+            l.To = V(floor(cx + s[3] * r) + 0.5, floor(cy + s[4] * r) + 0.5)
+            l.Color = color
+            l.Visible = true
+        else
+            l.Visible = false
+        end
+    end
+end
+
 -- ── Global input ────────────────────────────────────────────────────────
 local function isMouseDown()
     if type(isrbxactive) == "function" then
@@ -694,6 +730,7 @@ function Retro:CreateWindow(cfg)
     local hasMenu = cfg.MenuBar ~= false
     local MIN_W, MIN_H, MAX_W, MAX_H = 460, 340, 1000, 760
     local TREE_W = clamp(floor(finite(cfg.TreeWidth, 150)), 110, 240)
+    local sideStyle = string.lower(tostring(cfg.SidebarStyle or "Tree")) == "icons" and "icons" or "tree"
     local MENU_H = hasMenu and 20 or 0
     local normW = clamp(finite(cfg.Size and cfg.Size[1], 600), MIN_W, MAX_W)
     local normH = clamp(finite(cfg.Size and cfg.Size[2], 440), MIN_H, MAX_H)
@@ -750,6 +787,13 @@ function Retro:CreateWindow(cfg)
     end
     local menuHL = mkBevel(wd)
     local treeB = mkBevel(wd)
+    -- search box for the "Icons" sidebar (filters tabs by name)
+    local srch = nil
+    if sideStyle == "icons" then
+        srch = { b = mkBevel(wd), ring = wd("Circle", { Filled = false, Thickness = 1, NumSides = 12, Radius = 4 }),
+            handle = wd("Line", { Thickness = 1 }), txt = mkText(wd, 13), caret = sq(), fit = {},
+            el = { type = "input", text = "", value = "", maxLen = 40, placeholder = "Search", title = "Search" } }
+    end
     local pageB = mkBevel(wd)
     local headTxt = mkText(wd, 14, F_SYS)
     local headCrumb = mkText(wd, 13)
@@ -1264,6 +1308,67 @@ function Retro:CreateWindow(cfg)
 
     -- ── window painting ──
     local menuX, menuW = {}, {}
+    -- "Icons" sidebar: collapsible group labels, icon rows and a search box at the bottom
+    local function renderIconSidebar(T, tx, ty, bodyH, clickAvail)
+        local w, el = TREE_W, srch.el
+        local sx, sy, sw, sh = tx + 4, ty + bodyH - 25, TREE_W - 8, 21
+        local focused = activeInput == el
+        local shot = inRect(fmx, fmy, sx, sy, sw, sh)
+        if shot then hoverText = "Search tabs" end
+        if clickAvail and shot then
+            clickAvail = false
+            if not focused then focusInput(el) end
+        elseif fclick and focused and not shot then
+            finishInput()
+        end
+        focused = activeInput == el
+        paintBevel(srch.b, sx, sy, sw, sh, "field", T.Win, true, T)
+        srch.ring.Position = V(sx + 10, sy + 9); srch.ring.Color = T.Gray; srch.ring.Visible = true
+        srch.handle.From = V(sx + 13, sy + 12); srch.handle.To = V(sx + 17, sy + 16); srch.handle.Color = T.Gray; srch.handle.Visible = true
+        local q = focused and el.text or el.value
+        local empty = q == "" and not focused
+        fitInto(srch.txt, empty and el.placeholder or q, sw - 30, srch.fit)
+        srch.txt.Position = V(sx + 22, sy + 3); srch.txt.Color = empty and T.Gray or T.Text; srch.txt.Visible = true
+        rect(srch.caret, sx + 23 + (q == "" and 0 or floor(textW(srch.txt, 13))), sy + 3, 1, 15, T.Text, focused and floor(fnow * 2) % 2 == 0)
+
+        local filter = string.lower(q)
+        local ry, clipB = ty + 4, sy - 4
+        for _, s in ipairs(sections) do
+            local d = s.d
+            local any = false
+            for _, tab in ipairs(s.tabs) do
+                tab.match = filter == "" or string.find(string.lower(tab.title), filter, 1, true) ~= nil
+                any = any or tab.match
+            end
+            local sv = any and ry + 18 <= clipB
+            local shotS = sv and inRect(fmx, fmy, tx + 2, ry, w - 4, 18)
+            if shotS then hoverText = s.title end
+            if clickAvail and shotS then clickAvail = false; s.collapsed = not s.collapsed; markDirty() end
+            fitInto(d.txt, s.title, w - 40, s.fit)
+            d.txt.Position = V(tx + 7, ry + 2); d.txt.Color = T.Gray; d.txt.Visible = sv
+            local lx, rx = tx + 13 + floor(textW(d.txt, 13)), tx + w - 18
+            rect(d.e1, lx, ry + 9, rx - lx, 1, T.Lt, sv and rx > lx)
+            local open = filter ~= "" or not s.collapsed
+            paintArrow(d.arr, tx + w - 11, ry + 9, open and "up" or "down", T.Gray, sv)
+            if any then ry = ry + 18 end
+            for _, tab in ipairs(s.tabs) do
+                local td = tab.d
+                local tv = sv and open and tab.match and ry + 20 <= clipB
+                local thot = tv and inRect(fmx, fmy, tx + 3, ry, w - 6, 20)
+                if thot then hoverText = tab.title end
+                if clickAvail and thot then clickAvail = false; selectTab(tab) end
+                local isA = tab == activeTab
+                local col = isA and T.SelText or T.Text
+                rect(td.hl, tx + 3, ry, w - 6, 20, T.Sel, tv and isA)
+                paintIcon(td.icon, td.segs, tx + 16, ry + 10, 13, col, tv)
+                fitInto(td.txt, tab.title, w - 36, tab.fit)
+                td.txt.Position = V(tx + 29, ry + 3); td.txt.Color = col; td.txt.Visible = tv
+                if tv then ry = ry + 20 end
+            end
+            if any then ry = ry + 3 end
+        end
+        return clickAvail
+    end
     local function renderWindow(T)
         local vp = viewport
         if maximized then winX, winY, W, H = 0, 0, vp.X, vp.Y end
@@ -1433,11 +1538,14 @@ function Retro:CreateWindow(cfg)
             end
         end
 
-        -- tree (Explorer style)
+        -- sidebar
         local tx, ty = X + 4, bodyY
         paintBevel(treeB, tx, ty, TREE_W, bodyH, "field", T.Win, true, T)
         local ry, clipB = ty + 4, ty + bodyH - 3
-        for _, s in ipairs(sections) do
+        if sideStyle == "icons" then
+            clickAvail = renderIconSidebar(T, tx, ty, bodyH, clickAvail)
+        end
+        for _, s in ipairs(sideStyle == "tree" and sections or {}) do
             local d = s.d
             local sv = ry + ROW_H <= clipB
             local shot = sv and inRect(fmx, fmy, tx + 2, ry, TREE_W - 4, ROW_H)
@@ -2109,8 +2217,12 @@ function Retro:CreateWindow(cfg)
         scfg = scfg or {}
         local s = { title = tostring(scfg.Title or "Section"), tabs = {}, collapsed = scfg.Collapsed == true, fit = {}, d = {} }
         local d = s.d
-        d.vl = sq(); d.bo = sq(); d.bi = sq(); d.mi = sq(); d.pl = sq()
-        d.f1 = sq(); d.f2 = sq(); d.f3 = sq()
+        if sideStyle == "icons" then
+            d.e1 = sq(); d.arr = mkSquares(wd, 4)
+        else
+            d.vl = sq(); d.bo = sq(); d.bi = sq(); d.mi = sq(); d.pl = sq()
+            d.f1 = sq(); d.f2 = sq(); d.f3 = sq()
+        end
         d.txt = mkText(wd, 13)
         sections[#sections + 1] = s
         markDirty()
@@ -2121,8 +2233,18 @@ function Retro:CreateWindow(cfg)
             local tab = { title = tostring(tcfg.Title or "Tab"), section = s, elems = {}, fit = {}, d = {},
                 columns = clamp(floor(finite(tcfg.Columns, 1)), 1, 4) }
             local td = tab.d
-            td.hl = sq(); td.stub = sq()
-            td.p1 = sq(); td.p2 = sq(); td.p3 = sq(); td.p4 = sq(); td.p5 = sq()
+            td.hl = sq()
+            if sideStyle == "icons" then
+                td.icon = {}
+                for i = 1, ICON_SEGS do td.icon[i] = wd("Line", { Thickness = 1 }) end
+                -- explicit Icon, else an icon matching the tab title, else the next one in the cycle
+                td.segs = (tcfg.Icon and ICON_SET[string.lower(tostring(tcfg.Icon))])
+                    or ICON_SET[string.lower(tab.title)]
+                    or ICON_SET[ICON_CYCLE[(#tabs % #ICON_CYCLE) + 1]]
+            else
+                td.stub = sq()
+                td.p1 = sq(); td.p2 = sq(); td.p3 = sq(); td.p4 = sq(); td.p5 = sq()
+            end
             td.txt = mkText(wd, 13)
             s.tabs[#s.tabs + 1] = tab
             tabs[#tabs + 1] = tab

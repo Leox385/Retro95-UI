@@ -71,9 +71,24 @@ local win = Retro:CreateWindow({
     Size = { 600, 440 },       -- width, height
     Status = "Ready",          -- status bar text
     TreeWidth = 150,           -- side panel width
+    SidebarStyle = "Tree",     -- "Tree" (folders and pages) or "Icons" (see below)
     MenuBar = true,            -- false to remove the menu bar
 })
 ```
+
+### Sidebar styles
+
+- **`"Tree"`** (default): classic Explorer tree with `[+]/[-]` boxes, folders and page icons.
+- **`"Icons"`**: group labels that collapse with an arrow, tabs with a line icon, the selected tab highlighted, and a **search box** at the bottom that filters tabs by name.
+
+In `"Icons"` mode each tab can pick its icon:
+
+```lua
+local main = general:Tab({ Title = "Main", Icon = "home" })
+```
+
+Available icons: `home`, `settings`, `eye`, `star`, `user`, `target`, `list`, `zap`, `folder`, `palette`, `shield`, `box`, `cart`, `code`.
+Without `Icon`, a tab whose title matches an icon name uses it (`"Shop"` → cart, `"ESP"` / `"Visuals"` → eye, `"Themes"` → palette, `"Farm"` → zap); otherwise icons are assigned in order.
 
 ## Sections and tabs
 
