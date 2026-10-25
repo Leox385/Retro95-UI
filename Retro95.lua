@@ -226,6 +226,7 @@ local function fire(cb, ...)
 end
 
 -- ── Drawing proxy: only writes to the engine when a value changes ──────
+local zCounter = 0
 local function newDraw(kind, props)
     local raw = Drawing.new(kind)
     assert(raw, "Retro95: Drawing.new failed for " .. tostring(kind))
@@ -265,7 +266,12 @@ local function newDraw(kind, props)
             if key == "Text" or key == "Size" or key == "Font" then measured = nil end
         end,
     })
-    for k, v in pairs(props or {}) do proxy[k] = v end
+    -- Explicit, increasing ZIndex: some executors (Matcha) reuse the render slots of removed
+    -- drawings, so equal ZIndex values do not keep creation order. props.ZIndex is a layer.
+    props = props or {}
+    zCounter = zCounter + 1
+    if HAS_Z then props.ZIndex = (props.ZIndex or 0) * 100000 + zCounter end
+    for k, v in pairs(props) do proxy[k] = v end
     return proxy
 end
 local function kill(d)
