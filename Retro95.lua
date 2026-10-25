@@ -1,18 +1,18 @@
 --[[
     Retro95 UI  v1.0.0
-    Librería de interfaz estilo Windows 95/98 para executors con Drawing API (Luau).
+    Windows 95/98 style interface library for executors with a Drawing API (Luau).
 
-    Misma forma de uso que Astra/Kirin:
-        loadstring(readfile("Retro95.lua"))()
-        local Retro = _G.Retro95   -- Matcha descarta los return de loadstring
-        local win = Retro:CreateWindow({ Title = "Mi Script", Theme = "Windows 98", ToggleKey = "F10" })
-        local tab = win:Section("General"):Tab("Principal")
-        tab:Toggle({ Title = "Activar", Flag = "on", Callback = function(v) end })
+    Same usage as Astra/Kirin:
+        loadstring(httpget("https://raw.githubusercontent.com/Leox385/Retro95-UI/main/Retro95.lua"))()
+        local Retro = _G.Retro95   -- Matcha drops loadstring return values
+        local win = Retro:CreateWindow({ Title = "My Script", Theme = "Windows 98", ToggleKey = "F10" })
+        local tab = win:Section("General"):Tab("Main")
+        tab:Toggle({ Title = "Enabled", Flag = "on", Callback = function(v) end })
 
-    Ligera por diseño:
-      * solo redibuja cuando algo cambia (ratón, clic, teclado, API o cada 0.5 s para el reloj/cursor)
-      * sin partículas, sin transparencias animadas, sin glows
-      * bordes 3D hechos con cuadrados apilados (nítidos al píxel y baratos)
+    Lightweight by design:
+      * only redraws when something changes (mouse, click, keyboard, API, or every 0.5 s for the clock/caret)
+      * no particles, no animated transparency, no glows
+      * 3D bevels built from stacked squares (pixel-crisp and cheap)
 ]]
 
 local typeOf = typeof or type
@@ -129,7 +129,7 @@ end
 
 if type(_G.__Retro95Cleanup) == "function" then pcall(_G.__Retro95Cleanup) end
 
--- ── Capacidades del Drawing ─────────────────────────────────────────────
+-- ── Drawing capabilities ────────────────────────────────────────────────
 local function probe(kind, prop, val)
     local d
     local ok = pcall(function() d = Drawing.new(kind); d[prop] = val end)
@@ -138,8 +138,8 @@ local function probe(kind, prop, val)
 end
 local HAS_FONTSIZE = probe("Text", "FontSize", 13)
 local HAS_Z = probe("Square", "ZIndex", 1)
--- TextBounds real o estimado: Matcha devuelve 7 px por letra sin mirar fuente ni tamaño,
--- así que si "iiii" mide lo mismo que "WWWW" se usa ancho fijo por carácter
+-- Real or estimated TextBounds: Matcha reports 7 px per character regardless of font or size,
+-- so if "iiii" measures the same as "WWWW" a fixed per-character width is used
 local HAS_BOUNDS, CHAR_W = false, 6.5
 do
     local d
@@ -161,7 +161,7 @@ local FONTS = (typeOf(Drawing.Fonts) == "table") and Drawing.Fonts or {}
 local F_UI = FONTS.UI or 0
 local F_SYS = FONTS.SystemBold or FONTS.System or 1
 
--- ── Utilidades ──────────────────────────────────────────────────────────
+-- ── Utilities ───────────────────────────────────────────────────────────
 local function clamp(v, a, b)
     if v < a then return a elseif v > b then return b end
     return v
@@ -225,7 +225,7 @@ local function fire(cb, ...)
     end)
 end
 
--- ── Proxy de Drawing: solo escribe al motor cuando el valor cambia ─────
+-- ── Drawing proxy: only writes to the engine when a value changes ──────
 local function newDraw(kind, props)
     local raw = Drawing.new(kind)
     assert(raw, "Retro95: Drawing.new failed for " .. tostring(kind))
@@ -297,7 +297,7 @@ local function fitInto(d, full, room, st)
     d.Text = lo > 0 and (utf8Prefix(full, lo) .. "...") or ""
 end
 
--- ── Temas clásicos ──────────────────────────────────────────────────────
+-- ── Classic themes ──────────────────────────────────────────────────────
 local WHITE, BLACK = rgb(255, 255, 255), rgb(0, 0, 0)
 local FOLDER, FOLDER_DK, ICON_BAR = rgb(255, 232, 120), rgb(128, 128, 0), rgb(0, 128, 128)
 local function makeTheme(name, face, lt, sh, t1, t2, extra)
@@ -335,7 +335,7 @@ local function getKeyName(vk)
     return VK_NAMES[vk] or string.format("0x%X", vk)
 end
 
--- ── Primitivas 3D ───────────────────────────────────────────────────────
+-- ── 3D primitives ───────────────────────────────────────────────────────
 local function rect(s, x, y, w, h, color, v)
     if v and w > 0 and h > 0 then
         s.Position = V(floor(x), floor(y)); s.Size = V(floor(w), floor(h)); s.Color = color; s.Visible = true
@@ -358,7 +358,7 @@ local function mkText(create, size, font, extra)
     if extra then for k, v in pairs(extra) do p[k] = v end end
     return create("Text", p)
 end
--- capas: exterior abajo-der, exterior arriba-izq, interior abajo-der, interior arriba-izq
+-- layers: outer bottom-right, outer top-left, inner bottom-right, inner top-left
 local function bevelColors(T, kind, face)
     if kind == "window" then return T.Dk, T.Lt, T.Sh, T.Hi
     elseif kind == "field" then return T.Hi, T.Sh, T.Lt, T.Dk
@@ -381,7 +381,7 @@ local function paintBevel(b, x, y, w, h, kind, face, v, T)
     rect(b[4], x + 1, y + 1, w - 3, h - 3, c4, true)
     rect(b[5], x + 2, y + 2, w - 4, h - 4, face, true)
 end
--- flecha de 7px hecha con 4 filas de píxeles
+-- 7 px arrow made of 4 pixel rows
 local function paintArrow(a, cx, cy, dir, color, v)
     cx, cy = floor(cx), floor(cy)
     for i = 1, 4 do
@@ -394,13 +394,13 @@ local function paintArrow(a, cx, cy, dir, color, v)
         else rect(s, cx + 1 - (i - 1), cy - half, 1, len, color, v) end
     end
 end
--- check de Win95: 7 columnas de 1x3 px
+-- Win95 check mark: 7 columns of 1x3 px
 local CHECK = { 2, 3, 4, 3, 2, 1, 0 }
 local function paintCheck(c, x, y, color, v)
     for i = 1, 7 do rect(c[i], x + i - 1, y + CHECK[i], 1, 3, color, v) end
 end
 
--- ── Entrada global ──────────────────────────────────────────────────────
+-- ── Global input ────────────────────────────────────────────────────────
 local function isMouseDown()
     if type(isrbxactive) == "function" then
         local ok, a = pcall(isrbxactive)
@@ -429,7 +429,7 @@ local function mousePos()
     return -1, -1
 end
 
--- ── Librería ────────────────────────────────────────────────────────────
+-- ── Library ─────────────────────────────────────────────────────────────
 local Retro = { Version = "1.0.0", Flags = {}, _controls = {}, _watchers = {}, _alive = true, _windows = {}, _theme = Themes["Windows 98"] }
 local epoch = 0
 local function markDirty() epoch = epoch + 1 end
@@ -564,7 +564,7 @@ function Retro:LoadConfig(path, silent)
     return self:ImportConfig(json, silent)
 end
 
--- ── Notificaciones: mini cuadros de diálogo abajo a la derecha ──────────
+-- ── Notifications: small dialog boxes in the bottom-right corner ────────
 local notifs, notifConn, nPrev = {}, nil, false
 local NW = 270
 local NOTE_KIND = {
@@ -656,7 +656,7 @@ function Retro:Notify(cfg)
     end
 end
 
--- ── Ventana ─────────────────────────────────────────────────────────────
+-- ── Window ──────────────────────────────────────────────────────────────
 local TITLE_H, STATUS_H, ROW_H = 18, 18, 18
 local MINI_W, MINI_H = 180, 30
 local POP_N, SLICES, CHUNKS = 12, 10, 40
@@ -729,7 +729,7 @@ function Retro:CreateWindow(cfg)
     local function wdm(kind, props) return wd(kind, props, miniDraws) end
     local function sq() return wd("Square", { Filled = true }) end
 
-    -- marco, barra de título y botones de leyenda
+    -- frame, title bar and caption buttons
     local frameB = mkBevel(wd)
     local slices = mkSquares(wd, SLICES)
     local ticon = mkSquares(wd, 3)
@@ -762,7 +762,7 @@ function Retro:CreateWindow(cfg)
 
     local doMinimize, doRestore, toggleMax, doHide, showAbout, toggleUI, selectTab
 
-    -- ── menús ──
+    -- ── menus ──
     local pop = nil
     local function ensurePop()
         if pop then return end
@@ -836,7 +836,7 @@ function Retro:CreateWindow(cfg)
     }
     if hasMenu then for _, def in ipairs(menuDefs) do addMenuDraws(def) end end
 
-    -- ── teclado ──
+    -- ── keyboard ──
     local POLL = type(iskeypressed) == "function"
     local keyPrev = {}
 
@@ -947,7 +947,7 @@ function Retro:CreateWindow(cfg)
         end
     end
 
-    -- ── elementos ──
+    -- ── elements ──
     local function hideElem(el) for _, d in ipairs(el.all) do d.Visible = false end end
     local function hideTab(tab)
         if not tab then return end
@@ -1256,7 +1256,7 @@ function Retro:CreateWindow(cfg)
         end
     end
 
-    -- ── pintado de la ventana ──
+    -- ── window painting ──
     local menuX, menuW = {}, {}
     local function renderWindow(T)
         local vp = viewport
@@ -1285,7 +1285,7 @@ function Retro:CreateWindow(cfg)
             end
         end
 
-        -- menú desplegable (prioridad de clic)
+        -- popup menu (click priority)
         if openMenu and pop then
             local px, py = menuX[openMenu], mbY + MENU_H - 1
             local count = min(#popItems, POP_N)
@@ -1332,7 +1332,7 @@ function Retro:CreateWindow(cfg)
             hidePop()
         end
 
-        -- marco y título
+        -- frame and title
         paintBevel(frameB, X, Y, w, h, "window", T.Face, true, T)
         local tw = w - 6
         if colorEq(T.T1, T.T2) then
@@ -1406,7 +1406,7 @@ function Retro:CreateWindow(cfg)
             dg.rx, dg.ry = fmx - W, fmy - H
         end
 
-        -- barra de menús
+        -- menu bar
         if hasMenu then
             local hovM = nil
             for i, m in ipairs(menuDefs) do
@@ -1427,7 +1427,7 @@ function Retro:CreateWindow(cfg)
             end
         end
 
-        -- árbol (estilo Explorador)
+        -- tree (Explorer style)
         local tx, ty = X + 4, bodyY
         paintBevel(treeB, tx, ty, TREE_W, bodyH, "field", T.Win, true, T)
         local ry, clipB = ty + 4, ty + bodyH - 3
@@ -1475,7 +1475,7 @@ function Retro:CreateWindow(cfg)
             if lastMid then rect(d.vl, tx + 10, secY + 14, 1, lastMid - secY - 13, T.Sh, true) else d.vl.Visible = false end
         end
 
-        -- página de contenido
+        -- content page
         local px = X + 4 + TREE_W + 3
         local pw = X + w - 4 - px
         paintBevel(pageB, px, bodyY, pw, bodyH, "window", T.Face, true, T)
@@ -1495,11 +1495,11 @@ function Retro:CreateWindow(cfg)
         local items, total = {}, 0
         if activeTab then items, total = measure(activeTab, cw) end
         maxScroll = max(0, total - ch)
-        -- Matcha no expone la rueda: se desplaza arrastrando un hueco vacío del contenido
+        -- Matcha does not expose the mouse wheel: content scrolls by dragging
         if captured == "pan" and fdown then scrollY = pan.s - (fmy - pan.y) end
         scrollY = floor(clamp(scrollY, 0, maxScroll) + 0.5)
 
-        -- controles
+        -- controls
         clipY, clipH = cy, ch
         hoverOK = openMenu == nil and (captured == nil or type(captured) == "table") and inRect(fmx, fmy, cx - 2, cy, cw + 4, ch)
         cclick = clickAvail and hoverOK
@@ -1513,7 +1513,7 @@ function Retro:CreateWindow(cfg)
                 if not el.placed and not el.culled then hideElem(el); el.culled = true end
             end
         end
-        -- arrastre desde cualquier punto: si el ratón se mueve >6 px antes de soltar, es desplazamiento
+        -- drag from anywhere: moving more than 6 px before releasing scrolls instead of clicking
         if cclick then pan.y, pan.s, pan.pending = fmy, scrollY, true end
         if not fdown then pan.pending = false end
         if pan.pending and fdown and maxScroll > 0 and abs(fmy - pan.y) > 6 then
@@ -1526,7 +1526,7 @@ function Retro:CreateWindow(cfg)
         if cclick then clickAvail = false end
         if captured == "pan" then hoverText = "Drag to scroll" end
 
-        -- barra de estado
+        -- status bar
         local right = X + w - 4 - 14
         local clkW, fpsW = 74, 58
         local clkX = right - clkW
@@ -1552,7 +1552,7 @@ function Retro:CreateWindow(cfg)
         end
     end
 
-    -- botón de "barra de tareas" al minimizar
+    -- taskbar-style button shown while minimized
     local function ensureMiniPos()
         if not miniX then miniX = 6; miniY = viewport.Y - MINI_H - 6 end
     end
@@ -1616,7 +1616,7 @@ function Retro:CreateWindow(cfg)
         if frelease then captured = nil end
     end
 
-    -- ── acciones de ventana ──
+    -- ── window actions ──
     local function titleRect() return floor(winX) + 3, floor(winY) + 3, floor(W) - 6 end
     doMinimize = function()
         if minimized or anim then return end
@@ -1677,7 +1677,7 @@ function Retro:CreateWindow(cfg)
         markDirty()
     end
 
-    -- ── bucle principal: solo pinta cuando algo cambió ──
+    -- ── main loop: only repaints when something changed ──
     do
     local lmx, lmy, lastEpoch, forceAt, prevDown, lastRefresh = -1, -1, -1, 0, false, -10
     conns[#conns + 1] = connectFrame(function()
@@ -1743,7 +1743,7 @@ function Retro:CreateWindow(cfg)
     end
     end
 
-    -- teclado por eventos cuando no existe iskeypressed
+    -- event-based keyboard when iskeypressed is unavailable
     if not POLL and UserInputService then
         local function shiftDown()
             local ok, r = pcall(function()
@@ -1777,7 +1777,7 @@ function Retro:CreateWindow(cfg)
         end)
     end
 
-    -- ── API de controles ──
+    -- ── control API ──
     local function newElem(tab, kind, c)
         local el = { type = kind, d = {}, all = {}, tab = tab, visible = true, title = "" }
         if type(c) == "table" then
@@ -2095,7 +2095,7 @@ function Retro:CreateWindow(cfg)
         return API
     end
 
-    -- ── API de ventana ──
+    -- ── window API ──
     local Window = {}
 
     function Window:Section(scfg)
